@@ -37,4 +37,18 @@
     mode: 'a+x'
     force: yes
   tags: docker_compose
+ 
+- name: Open ports
+  firewalld:
+    permanent: yes
+    immediate: yes
+    port: "{{item.port}}/{{item.proto}}"
+    state: "{{item.state}}"
+    zone: "{{item.zone}}"
+  with_items:
+    - {port: "2377", proto: "tcp", state: "enabled", zone: "public" }
+    - {port: "7946", proto: "tcp", state: "enabled", zone: "public" }
+    - {port: "7946", proto: "udp", state: "enabled", zone: "public" }
+    - {port: "4789", proto: "udp", state: "enabled", zone: "public" }
+  tags: firewalld_mod
 ...
