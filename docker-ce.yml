@@ -1,0 +1,54 @@
+---
+- name: Add Docker repository
+  yum_repository:
+    name: docker-ce
+    description: docker-ce repo
+    baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+    gpgcheck: no
+    enabled: yes
+    state: present
+  tags: add_docker_repo
+
+- name: Install docker-ce, vim, git
+  ansible.builtin.yum:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    update_cache: true
+  with_items:
+    - { name: "docker-ce", state: "present"}
+    - { name: "vim", state: "latest"}
+    - { name: "git", state: "latest"}
+  tags: yum_mod
+
+- name: Start Docker
+  ansible.builtin.service:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    enabled: "{{ item.enabled }}"
+  with_items:
+    - { name: "docker", enabled: "true", state: "started"}
+    - { name: "firewalld", enabled: "true", state: "started"}
+  tags: service_mod
+
+- name: Install or upgrade docker-compose
+  get_url:
+    url : "https://github.com/docker/compose/releases/download/v2.11.2/docker-compose-linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: 'a+x'
+    force: yes
+  tags: docker_compose
+
+- name: Open ports
+  firewalld:
+    permanent: yes
+    immediate: yes
+    port: "{{item.port}}/{{item.proto}}"
+    state: "{{item.state}}"
+    zone: "{{item.zone}}"
+  with_items:
+    - {port: "2377", proto: "tcp", state: "enabled", zone: "public" }
+    - {port: "7946", proto: "tcp", state: "enabled", zone: "public" }
+    - {port: "7946", proto: "udp", state: "enabled", zone: "public" }
+    - {port: "4789", proto: "udp", state: "enabled", zone: "public" }
+  tags: firewalld_mod
+...
